@@ -80,6 +80,9 @@
         try {
             const xanoEndpoint = "https://api.metricaas.com.br/api:0BoQA_U6/redirect";
 
+            // Carregar Visitor API
+            await loadVisitorAPI();
+
             // Extrai os parâmetros da URL
             const params = new URLSearchParams(window.location.search);
             const userid = params.get("userid");
@@ -167,23 +170,42 @@
         }
     }
 
+    // Função para carregar o script da Visitor API
+    function loadVisitorAPI() {
+        return new Promise((resolve, reject) => {
+            console.log("Carregando Visitor API...");
+            const script = document.createElement("script");
+            script.src = "https://api.visitorapi.com/script.js";
+            script.async = true;
+            script.onload = () => {
+                console.log("Visitor API carregada com sucesso.");
+                resolve();
+            };
+            script.onerror = () => {
+                console.error("Erro ao carregar Visitor API.");
+                reject(new Error("Falha ao carregar Visitor API."));
+            };
+            document.head.appendChild(script);
+        });
+    }
+
     // Função para obter dados da Visitor API
-function getVisitorAPIData() {
-    return new Promise((resolve, reject) => {
-        console.log("Chamando Visitor API...");
-        VisitorAPI(
-            "Ds537kuq7pn7MtMfnfDZ", // Substitua pelo seu Project ID
-            function(data) {
-                console.log("Sucesso ao obter dados da Visitor API:", data);
-                resolve(data);
-            },
-            function(errorCode, errorMessage) {
-                console.error("Erro ao obter dados da Visitor API:", errorCode, errorMessage);
-                reject({ errorCode, errorMessage });
-            }
-        );
-    });
-}
+    function getVisitorAPIData() {
+        return new Promise((resolve, reject) => {
+            console.log("Chamando Visitor API...");
+            VisitorAPI(
+                "Ds537kuq7pn7MtMfnfDZ", // Substitua pelo seu Project ID
+                function(data) {
+                    console.log("Sucesso ao obter dados da Visitor API:", data);
+                    resolve(data);
+                },
+                function(errorCode, errorMessage) {
+                    console.error("Erro ao obter dados da Visitor API:", errorCode, errorMessage);
+                    reject({ errorCode, errorMessage });
+                }
+            );
+        });
+    }
 
     function isValidURL(string) {
         try {
@@ -193,14 +215,6 @@ function getVisitorAPIData() {
             return false;
         }
     }
-
-    // Carregar Visitor API Script
-    (function loadVisitorAPI() {
-        var script = document.createElement("script");
-        script.src = "https://api.visitorapi.com/script.js";
-        script.async = true;
-        document.head.appendChild(script);
-    })();
 
     window.onload = fetchAndRedirect;
 </script>
