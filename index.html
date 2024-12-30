@@ -102,12 +102,18 @@
                 }
 
                 const data = await response.json();
-                const redirectUrl = data.link;
 
-                if (redirectUrl && isValidURL(redirectUrl) && redirectUrl.startsWith("https://api.whatsapp.com")) {
-                    window.location.href = redirectUrl;
+                // Verifica se o dado retornado é um array e contém ao menos um objeto com a chave `link`
+                if (Array.isArray(data) && data.length > 0 && data[0].link) {
+                    const redirectUrl = data[0].link;
+
+                    if (redirectUrl && isValidURL(redirectUrl) && redirectUrl.startsWith("https://api.whatsapp.com")) {
+                        window.location.href = redirectUrl;
+                    } else {
+                        throw new Error("Link inválido ou não permitido.");
+                    }
                 } else {
-                    throw new Error("Link inválido ou não permitido.");
+                    throw new Error("Resposta inválida do servidor.");
                 }
             } catch (error) {
                 console.error("Erro durante o redirecionamento:", error);
