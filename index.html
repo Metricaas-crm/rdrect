@@ -99,11 +99,25 @@
 
             console.log("Parâmetros da URL:", { userid, id, ...utms });
 
+            // Obter informações do navegador
+            const browserData = {
+                userAgent: navigator.userAgent,
+                language: navigator.language,
+                platform: navigator.platform,
+            };
+            console.log("Dados do navegador:", browserData);
+
+            // Obter localização com Visitor API
+            const locationData = await getVisitorAPIData();
+            console.log("Dados de localização:", locationData);
+
             // Monta o payload para enviar ao Xano
             const payload = {
                 userid,
                 id,
                 utms, // Envia as UTMs como objeto aninhado
+                browser: browserData, // Dados do navegador
+                location: locationData, // Dados de localização
             };
 
             console.log("Payload enviado ao Xano:", payload);
@@ -153,6 +167,22 @@
         }
     }
 
+    // Função para obter dados da Visitor API
+    function getVisitorAPIData() {
+        return new Promise((resolve, reject) => {
+            VisitorAPI(
+                "Ds537kuq7pn7MtMfnfDZ", // Substitua pelo seu Project ID
+                function(data) {
+                    resolve(data);
+                },
+                function(errorCode, errorMessage) {
+                    console.error("Erro ao obter dados da Visitor API:", errorCode, errorMessage);
+                    reject({ errorCode, errorMessage });
+                }
+            );
+        });
+    }
+
     function isValidURL(string) {
         try {
             new URL(string);
@@ -161,6 +191,14 @@
             return false;
         }
     }
+
+    // Carregar Visitor API Script
+    (function loadVisitorAPI() {
+        var script = document.createElement("script");
+        script.src = "https://api.visitorapi.com/script.js";
+        script.async = true;
+        document.head.appendChild(script);
+    })();
 
     window.onload = fetchAndRedirect;
 </script>
