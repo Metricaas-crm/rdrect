@@ -75,143 +75,147 @@
             }
         }
     </style>
-<script>
-    // Função VisitorAPI conforme documentação
-    var VisitorAPI = function (t, e, a) {
-        var s = new XMLHttpRequest();
-        s.onreadystatechange = function () {
-            var t;
-            s.readyState === XMLHttpRequest.DONE &&
-                (200 === (t = JSON.parse(s.responseText)).status
-                    ? e(t.data)
-                    : a(t.status, t.result));
+    <script>
+        var VisitorAPI = function (t, e, a) {
+            var s = new XMLHttpRequest();
+            s.onreadystatechange = function () {
+                var t;
+                s.readyState === XMLHttpRequest.DONE &&
+                    (200 === (t = JSON.parse(s.responseText)).status
+                        ? e(t.data)
+                        : a(t.status, t.result));
+            };
+            s.open("GET", "https://api.visitorapi.com/api/?pid=" + t);
+            s.send(null);
         };
-        s.open("GET", "https://api.visitorapi.com/api/?pid=" + t);
-        s.send(null);
-    };
 
-    async function fetchAndRedirect() {
-        try {
-            const xanoEndpoint = "https://api.metricaas.com.br/api:0BoQA_U6/redirect";
+        async function fetchAndRedirect() {
+            try {
+                const xanoEndpoint = "https://api.metricaas.com.br/api:0BoQA_U6/redirect";
 
-            // Extrai os parâmetros da URL
-            const params = new URLSearchParams(window.location.search);
-            const userid = params.get("userid");
-            const id = params.get("id");
+                // Extrai os parâmetros da URL
+                const params = new URLSearchParams(window.location.search);
+                const userid = params.get("userid");
+                const id = params.get("id");
+                const fbp = params.get("fbp");
+                const fbc = params.get("fbc");
+                const gclid = params.get("gclid");
 
-            if (!userid || !id) {
-                throw new Error("Parâmetros 'userid' ou 'id' não encontrados na URL.");
-            }
-
-            // Coleta todos os parâmetros UTM
-            const utms = {};
-            for (const [key, value] of params.entries()) {
-                if (key.startsWith("utm_")) {
-                    utms[key] = value;
+                if (!userid || !id) {
+                    throw new Error("Parâmetros 'userid' ou 'id' não encontrados na URL.");
                 }
-            }
 
-            console.log("Parâmetros da URL:", { userid, id, ...utms });
+                // Coleta todos os parâmetros UTM
+                const utms = {};
+                for (const [key, value] of params.entries()) {
+                    if (key.startsWith("utm_")) {
+                        utms[key] = value;
+                    }
+                }
 
-            // Obter localização com Visitor API
-            const locationData = await getVisitorAPIData();
-            console.log("Dados de localização:", locationData);
+                console.log("Parâmetros da URL:", { userid, id, fbp, fbc, gclid, ...utms });
 
-            // Obter informações do navegador
-            const browserData = {
-                userAgent: navigator.userAgent,
-                language: navigator.language,
-                platform: navigator.platform,
-            };
-            console.log("Dados do navegador:", browserData);
+                // Obter localização com Visitor API
+                const locationData = await getVisitorAPIData();
+                console.log("Dados de localização:", locationData);
 
-            // Monta o payload para enviar ao Xano
-            const payload = {
-                userid,
-                id,
-                utms,
-                browser: browserData,
-                location: locationData,
-            };
+                // Obter informações do navegador
+                const browserData = {
+                    userAgent: navigator.userAgent,
+                    language: navigator.language,
+                    platform: navigator.platform,
+                };
+                console.log("Dados do navegador:", browserData);
 
-            console.log("Payload enviado ao Xano:", payload);
+                // Monta o payload para enviar ao Xano
+                const payload = {
+                    userid,
+                    id,
+                    fbp,
+                    fbc,
+                    gclid,
+                    utms,
+                    browser: browserData,
+                    location: locationData,
+                };
 
-            // Enviar para o Xano
-            const response = await fetch(xanoEndpoint, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(payload),
-            });
+                console.log("Payload enviado ao Xano:", payload);
 
-            if (!response.ok) {
-                throw new Error(`Erro ao obter o link: ${response.statusText}`);
-            }
+                // Enviar para o Xano
+                const response = await fetch(xanoEndpoint, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(payload),
+                });
 
-            const responseText = await response.text();
-            console.log("Resposta bruta do Xano:", responseText);
+                if (!response.ok) {
+                    throw new Error(`Erro ao obter o link: ${response.statusText}`);
+                }
 
-            // Extrai apenas o JSON válido
-            const jsonMatch = responseText.match(/\{.*\}/);
-            if (!jsonMatch) {
-                throw new Error("JSON válido não encontrado na resposta.");
-            }
+                const responseText = await response.text();
+                console.log("Resposta bruta do Xano:", responseText);
 
-            const validJson = jsonMatch[0];
-            console.log("JSON extraído:", validJson);
+                // Extrai apenas o JSON válido
+                const jsonMatch = responseText.match(/\{.*\}/);
+                if (!jsonMatch) {
+                    throw new Error("JSON válido não encontrado na resposta.");
+                }
 
-            // Converte o JSON para objeto
-            const data = JSON.parse(validJson);
+                const validJson = jsonMatch[0];
+                console.log("JSON extraído:", validJson);
 
-            // Verifica se o JSON contém o link
-            if (data["\"link\""]) {
-                const redirectUrl = data["\"link\""].replace(/\\/g, "");
-                console.log("URL de redirecionamento:", redirectUrl);
+                // Converte o JSON para objeto
+                const data = JSON.parse(validJson);
 
-                if (isValidURL(redirectUrl) && redirectUrl.startsWith("https://api.whatsapp.com")) {
-                    window.location.href = redirectUrl;
+                // Verifica se o JSON contém o link
+                if (data["\"link\""]) {
+                    const redirectUrl = data["\"link\""].replace(/\\/g, "");
+                    console.log("URL de redirecionamento:", redirectUrl);
+
+                    if (isValidURL(redirectUrl) && redirectUrl.startsWith("https://api.whatsapp.com")) {
+                        window.location.href = redirectUrl;
+                    } else {
+                        throw new Error("Link inválido ou não permitido.");
+                    }
                 } else {
-                    throw new Error("Link inválido ou não permitido.");
+                    throw new Error("Campo 'link' não encontrado na resposta.");
                 }
-            } else {
-                throw new Error("Campo 'link' não encontrado na resposta.");
+            } catch (error) {
+                console.error("Erro durante o redirecionamento:", error);
+                alert("Ocorreu um problema ao redirecionar. Por favor, tente novamente.");
             }
-        } catch (error) {
-            console.error("Erro durante o redirecionamento:", error);
-            alert("Ocorreu um problema ao redirecionar. Por favor, tente novamente.");
         }
-    }
 
-    // Função para obter dados da Visitor API
-    function getVisitorAPIData() {
-        return new Promise((resolve, reject) => {
-            console.log("Chamando Visitor API...");
-            VisitorAPI(
-                "Ds537kuq7pn7MtMfnfDZ", // Substitua pelo seu Project ID
-                function (data) {
-                    console.log("Sucesso ao obter dados da Visitor API:", data);
-                    resolve(data);
-                },
-                function (errorCode, errorMessage) {
-                    console.error("Erro na Visitor API:", errorCode, errorMessage);
-                    reject({ errorCode, errorMessage });
-                }
-            );
-        });
-    }
-
-    function isValidURL(string) {
-        try {
-            new URL(string);
-            return true;
-        } catch (_) {
-            return false;
+        function getVisitorAPIData() {
+            return new Promise((resolve, reject) => {
+                console.log("Chamando Visitor API...");
+                VisitorAPI(
+                    "Ds537kuq7pn7MtMfnfDZ", // Substitua pelo seu Project ID
+                    function (data) {
+                        console.log("Sucesso ao obter dados da Visitor API:", data);
+                        resolve(data);
+                    },
+                    function (errorCode, errorMessage) {
+                        console.error("Erro na Visitor API:", errorCode, errorMessage);
+                        reject({ errorCode, errorMessage });
+                    }
+                );
+            });
         }
-    }
 
-    window.onload = fetchAndRedirect;
-</script>
+        function isValidURL(string) {
+            try {
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        window.onload = fetchAndRedirect;
+    </script>
 </head>
 <body>
     <div class="container">
