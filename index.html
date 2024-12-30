@@ -87,6 +87,8 @@
                 throw new Error("Parâmetros 'userid' ou 'id' não encontrados na URL.");
             }
 
+            console.log("Parâmetros da URL:", { userid, id });
+
             const payload = { userid, id };
 
             const response = await fetch(xanoEndpoint, {
@@ -101,28 +103,33 @@
                 throw new Error(`Erro ao obter o link: ${response.statusText}`);
             }
 
-            let data = await response.text(); // Obtém a resposta como texto bruto
-            console.log("Resposta bruta do Xano:", data);
+            const responseText = await response.text();
+            console.log("Resposta bruta do servidor:", responseText);
 
-            // Corrige a formatação JSON se necessário
-            data = data.replace(/"link":\s*https?:\/\//g, '"link": "https://');
-            console.log("Resposta corrigida:", data);
+            // Extrai o JSON válido da resposta
+            const jsonMatch = responseText.match(/\{.*\}/); // Localiza a parte JSON
+            if (!jsonMatch) {
+                throw new Error("JSON válido não encontrado na resposta.");
+            }
 
-            data = JSON.parse(data); // Converte o texto para JSON
+            const validJson = jsonMatch[0]; // Obtém o JSON localizado
+            console.log("JSON extraído:", validJson);
 
-            // Verifica se o dado retornado é um array e contém ao menos um objeto com a chave `link`
-            if (Array.isArray(data) && data.length > 0 && data[0].link) {
-                const redirectUrl = data[0].link;
+            const data = JSON.parse(validJson); // Converte para objeto
+
+            // Verifica se o JSON contém o link
+            if (data["\"link\""]) {
+                const redirectUrl = data["\"link\""].replace(/\\/g, ""); // Remove barras invertidas
 
                 console.log("URL de redirecionamento:", redirectUrl);
 
-                if (redirectUrl && isValidURL(redirectUrl) && redirectUrl.startsWith("https://api.whatsapp.com")) {
+                if (isValidURL(redirectUrl) && redirectUrl.startsWith("https://api.whatsapp.com")) {
                     window.location.href = redirectUrl;
                 } else {
                     throw new Error("Link inválido ou não permitido.");
                 }
             } else {
-                throw new Error("Resposta inválida do servidor.");
+                throw new Error("Campo 'link' não encontrado na resposta.");
             }
         } catch (error) {
             console.error("Erro durante o redirecionamento:", error);
