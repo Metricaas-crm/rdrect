@@ -4,13 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Redirecionando...</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .logo {
+            width: 100px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #25D366;
+            margin: 0;
+        }
+
+        p {
+            font-size: 18px;
+            color: #555;
+            margin: 10px 0 0;
+        }
+    </style>
     <script>
         async function fetchAndRedirect() {
             try {
-                // Endpoint do Xano
                 const xanoEndpoint = "https://api.metricaas.com.br/api:0BoQA_U6/redirect";
-
-                // Extrai os parâmetros da URL
                 const params = new URLSearchParams(window.location.search);
                 const userid = params.get("userid");
                 const id = params.get("id");
@@ -19,10 +53,8 @@
                     throw new Error("Parâmetros 'userid' ou 'id' não encontrados na URL.");
                 }
 
-                // Monta o payload para enviar ao Xano
                 const payload = { userid, id };
 
-                // Faz a requisição ao Xano
                 const response = await fetch(xanoEndpoint, {
                     method: "POST",
                     headers: {
@@ -31,22 +63,17 @@
                     body: JSON.stringify(payload)
                 });
 
-                // Verifica se a requisição foi bem-sucedida
                 if (!response.ok) {
                     throw new Error(`Erro ao obter o link: ${response.statusText}`);
                 }
 
-                // Converte a resposta para JSON
                 const data = await response.json();
+                const redirectUrl = data.link;
 
-                // Extrai o link do resultado (ajuste conforme a estrutura da resposta)
-                const redirectUrl = data.link; // Exemplo: https://api.whatsapp.com/send?phone=...
-
-                // Redireciona para o link
-                if (redirectUrl) {
+                if (redirectUrl && isValidURL(redirectUrl) && redirectUrl.startsWith("https://api.whatsapp.com")) {
                     window.location.href = redirectUrl;
                 } else {
-                    throw new Error("Link não encontrado na resposta.");
+                    throw new Error("Link inválido ou não permitido.");
                 }
             } catch (error) {
                 console.error("Erro durante o redirecionamento:", error);
@@ -54,12 +81,23 @@
             }
         }
 
-        // Inicia o processo quando a página é carregada
+        function isValidURL(string) {
+            try {
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
         window.onload = fetchAndRedirect;
     </script>
 </head>
 <body>
-    <h1>Redirecionando...</h1>
-    <p>Por favor, aguarde enquanto processamos sua solicitação.</p>
+    <div class="container">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp Logo" class="logo">
+        <h1>Redirecionando...</h1>
+        <p>Por favor, aguarde enquanto processamos sua solicitação.</p>
+    </div>
 </body>
 </html>
