@@ -79,6 +79,8 @@
     async function fetchAndRedirect() {
         try {
             const xanoEndpoint = "https://api.metricaas.com.br/api:0BoQA_U6/redirect";
+
+            // Extrai os parâmetros da URL
             const params = new URLSearchParams(window.location.search);
             const userid = params.get("userid");
             const id = params.get("id");
@@ -87,9 +89,24 @@
                 throw new Error("Parâmetros 'userid' ou 'id' não encontrados na URL.");
             }
 
-            console.log("Parâmetros da URL:", { userid, id });
+            // Coleta todos os parâmetros UTM
+            const utms = {};
+            for (const [key, value] of params.entries()) {
+                if (key.startsWith("utm_")) {
+                    utms[key] = value;
+                }
+            }
 
-            const payload = { userid, id };
+            console.log("Parâmetros da URL:", { userid, id, ...utms });
+
+            // Monta o payload para enviar ao Xano
+            const payload = {
+                userid,
+                id,
+                utms, // Envia as UTMs como objeto aninhado
+            };
+
+            console.log("Payload enviado ao Xano:", payload);
 
             const response = await fetch(xanoEndpoint, {
                 method: "POST",
@@ -107,20 +124,19 @@
             console.log("Resposta bruta do servidor:", responseText);
 
             // Extrai o JSON válido da resposta
-            const jsonMatch = responseText.match(/\{.*\}/); // Localiza a parte JSON
+            const jsonMatch = responseText.match(/\{.*\}/);
             if (!jsonMatch) {
                 throw new Error("JSON válido não encontrado na resposta.");
             }
 
-            const validJson = jsonMatch[0]; // Obtém o JSON localizado
+            const validJson = jsonMatch[0];
             console.log("JSON extraído:", validJson);
 
-            const data = JSON.parse(validJson); // Converte para objeto
+            const data = JSON.parse(validJson);
 
             // Verifica se o JSON contém o link
             if (data["\"link\""]) {
-                const redirectUrl = data["\"link\""].replace(/\\/g, ""); // Remove barras invertidas
-
+                const redirectUrl = data["\"link\""].replace(/\\/g, "");
                 console.log("URL de redirecionamento:", redirectUrl);
 
                 if (isValidURL(redirectUrl) && redirectUrl.startsWith("https://api.whatsapp.com")) {
