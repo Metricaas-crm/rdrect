@@ -101,14 +101,20 @@
                 throw new Error(`Erro ao obter o link: ${response.statusText}`);
             }
 
-            const data = await response.json();
-            console.log("Resposta do Xano:", data); // Log da resposta
+            let data = await response.text(); // Obtém a resposta como texto bruto
+            console.log("Resposta bruta do Xano:", data);
+
+            // Corrige a formatação JSON se necessário
+            data = data.replace(/"link":\s*https?:\/\//g, '"link": "https://');
+            console.log("Resposta corrigida:", data);
+
+            data = JSON.parse(data); // Converte o texto para JSON
 
             // Verifica se o dado retornado é um array e contém ao menos um objeto com a chave `link`
             if (Array.isArray(data) && data.length > 0 && data[0].link) {
                 const redirectUrl = data[0].link;
 
-                console.log("URL de redirecionamento:", redirectUrl); // Log do link
+                console.log("URL de redirecionamento:", redirectUrl);
 
                 if (redirectUrl && isValidURL(redirectUrl) && redirectUrl.startsWith("https://api.whatsapp.com")) {
                     window.location.href = redirectUrl;
