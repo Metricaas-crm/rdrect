@@ -75,63 +75,66 @@
             }
         }
     </style>
-    <script>
-        async function fetchAndRedirect() {
-            try {
-                const xanoEndpoint = "https://api.metricaas.com.br/api:0BoQA_U6/redirect";
-                const params = new URLSearchParams(window.location.search);
-                const userid = params.get("userid");
-                const id = params.get("id");
+<script>
+    async function fetchAndRedirect() {
+        try {
+            const xanoEndpoint = "https://api.metricaas.com.br/api:0BoQA_U6/redirect";
+            const params = new URLSearchParams(window.location.search);
+            const userid = params.get("userid");
+            const id = params.get("id");
 
-                if (!userid || !id) {
-                    throw new Error("Parâmetros 'userid' ou 'id' não encontrados na URL.");
-                }
+            if (!userid || !id) {
+                throw new Error("Parâmetros 'userid' ou 'id' não encontrados na URL.");
+            }
 
-                const payload = { userid, id };
+            const payload = { userid, id };
 
-                const response = await fetch(xanoEndpoint, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(payload)
-                });
+            const response = await fetch(xanoEndpoint, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
 
-                if (!response.ok) {
-                    throw new Error(`Erro ao obter o link: ${response.statusText}`);
-                }
+            if (!response.ok) {
+                throw new Error(`Erro ao obter o link: ${response.statusText}`);
+            }
 
-                const data = await response.json();
+            const data = await response.json();
+            console.log("Resposta do Xano:", data); // Log da resposta
 
-                // Verifica se o dado retornado é um array e contém ao menos um objeto com a chave `link`
-                if (Array.isArray(data) && data.length > 0 && data[0].link) {
-                    const redirectUrl = data[0].link;
+            // Verifica se o dado retornado é um array e contém ao menos um objeto com a chave `link`
+            if (Array.isArray(data) && data.length > 0 && data[0].link) {
+                const redirectUrl = data[0].link;
 
-                    if (redirectUrl && isValidURL(redirectUrl) && redirectUrl.startsWith("https://api.whatsapp.com")) {
-                        window.location.href = redirectUrl;
-                    } else {
-                        throw new Error("Link inválido ou não permitido.");
-                    }
+                console.log("URL de redirecionamento:", redirectUrl); // Log do link
+
+                if (redirectUrl && isValidURL(redirectUrl) && redirectUrl.startsWith("https://api.whatsapp.com")) {
+                    window.location.href = redirectUrl;
                 } else {
-                    throw new Error("Resposta inválida do servidor.");
+                    throw new Error("Link inválido ou não permitido.");
                 }
-            } catch (error) {
-                console.error("Erro durante o redirecionamento:", error);
-                alert("Ocorreu um problema ao redirecionar. Por favor, tente novamente.");
+            } else {
+                throw new Error("Resposta inválida do servidor.");
             }
+        } catch (error) {
+            console.error("Erro durante o redirecionamento:", error);
+            alert("Ocorreu um problema ao redirecionar. Por favor, tente novamente.");
         }
+    }
 
-        function isValidURL(string) {
-            try {
-                new URL(string);
-                return true;
-            } catch (_) {
-                return false;
-            }
+    function isValidURL(string) {
+        try {
+            new URL(string);
+            return true;
+        } catch (_) {
+            return false;
         }
+    }
 
-        window.onload = fetchAndRedirect;
-    </script>
+    window.onload = fetchAndRedirect;
+</script>
 </head>
 <body>
     <div class="container">
