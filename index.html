@@ -80,7 +80,7 @@
         try {
             const xanoEndpoint = "https://api.metricaas.com.br/api:0BoQA_U6/redirect";
 
-            // Carregar Visitor API
+            // Carregar Visitor API antes de usá-la
             await loadVisitorAPI();
 
             // Extrai os parâmetros da URL
@@ -193,17 +193,22 @@
     function getVisitorAPIData() {
         return new Promise((resolve, reject) => {
             console.log("Chamando Visitor API...");
-            VisitorAPI(
-                "Ds537kuq7pn7MtMfnfDZ", // Substitua pelo seu Project ID
-                function(data) {
-                    console.log("Sucesso ao obter dados da Visitor API:", data);
-                    resolve(data);
-                },
-                function(errorCode, errorMessage) {
-                    console.error("Erro ao obter dados da Visitor API:", errorCode, errorMessage);
-                    reject({ errorCode, errorMessage });
-                }
-            );
+            if (typeof VisitorAPI !== "undefined") {
+                VisitorAPI(
+                    "Ds537kuq7pn7MtMfnfDZ", // Substitua pelo seu Project ID
+                    function(data) {
+                        console.log("Sucesso ao obter dados da Visitor API:", data);
+                        resolve(data);
+                    },
+                    function(errorCode, errorMessage) {
+                        console.error("Erro ao obter dados da Visitor API:", errorCode, errorMessage);
+                        reject({ errorCode, errorMessage });
+                    }
+                );
+            } else {
+                console.error("VisitorAPI não está disponível.");
+                reject(new Error("VisitorAPI não definida após carregar o script."));
+            }
         });
     }
 
