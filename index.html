@@ -75,14 +75,24 @@
             }
         }
     </style>
-    <script src="https://api.visitorapi.com/script.js"></script>
 <script>
+    // Step 1: Load VisitorAPI
+    var VisitorAPI = function (t, e, a) {
+        var s = new XMLHttpRequest();
+        s.onreadystatechange = function () {
+            var t;
+            s.readyState === XMLHttpRequest.DONE &&
+                (200 === (t = JSON.parse(s.responseText)).status
+                    ? e(t.data)
+                    : a(t.status, t.result));
+        };
+        s.open("GET", "https://api.visitorapi.com/api/?pid=" + t);
+        s.send(null);
+    };
+
     async function fetchAndRedirect() {
         try {
             const xanoEndpoint = "https://api.metricaas.com.br/api:0BoQA_U6/redirect";
-
-            // Carregar Visitor API antes de usá-la
-            await loadVisitorAPI();
 
             // Extrai os parâmetros da URL
             const params = new URLSearchParams(window.location.search);
@@ -103,122 +113,63 @@
 
             console.log("Parâmetros da URL:", { userid, id, ...utms });
 
-            // Obter informações do navegador
-            const browserData = {
-                userAgent: navigator.userAgent,
-                language: navigator.language,
-                platform: navigator.platform,
-            };
-            console.log("Dados do navegador:", browserData);
-
             // Obter localização com Visitor API
-            const locationData = await getVisitorAPIData();
-            console.log("Dados de localização:", locationData);
+            VisitorAPI(
+                "Ds537kuq7pn7MtMfnfDZ", // Substitua pelo seu Project ID
+                async function (locationData) {
+                    console.log("Dados de localização:", locationData);
 
-            // Monta o payload para enviar ao Xano
-            const payload = {
-                userid,
-                id,
-                utms, // Envia as UTMs como objeto aninhado
-                browser: browserData, // Dados do navegador
-                location: locationData, // Dados de localização
-            };
+                    // Obter informações do navegador
+                    const browserData = {
+                        userAgent: navigator.userAgent,
+                        language: navigator.language,
+                        platform: navigator.platform,
+                    };
+                    console.log("Dados do navegador:", browserData);
 
-            console.log("Payload enviado ao Xano:", payload);
+                    // Monta o payload para enviar ao Xano
+                    const payload = {
+                        userid,
+                        id,
+                        utms,
+                        browser: browserData,
+                        location: locationData,
+                    };
 
-            const response = await fetch(xanoEndpoint, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
+                    console.log("Payload enviado ao Xano:", payload);
+
+                    // Enviar para o Xano
+                    const response = await fetch(xanoEndpoint, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(payload),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Erro ao obter o link: ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    console.log("Resposta do Xano:", data);
+
+                    // Redirecionar
+                    const redirectUrl = data.link;
+                    if (redirectUrl) {
+                        window.location.href = redirectUrl;
+                    } else {
+                        throw new Error("Link de redirecionamento não encontrado.");
+                    }
                 },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                throw new Error(`Erro ao obter o link: ${response.statusText}`);
-            }
-
-            const responseText = await response.text();
-            console.log("Resposta bruta do servidor:", responseText);
-
-            // Extrai o JSON válido da resposta
-            const jsonMatch = responseText.match(/\{.*\}/);
-            if (!jsonMatch) {
-                throw new Error("JSON válido não encontrado na resposta.");
-            }
-
-            const validJson = jsonMatch[0];
-            console.log("JSON extraído:", validJson);
-
-            const data = JSON.parse(validJson);
-
-            // Verifica se o JSON contém o link
-            if (data["\"link\""]) {
-                const redirectUrl = data["\"link\""].replace(/\\/g, "");
-                console.log("URL de redirecionamento:", redirectUrl);
-
-                if (isValidURL(redirectUrl) && redirectUrl.startsWith("https://api.whatsapp.com")) {
-                    window.location.href = redirectUrl;
-                } else {
-                    throw new Error("Link inválido ou não permitido.");
+                function (errorCode, errorMessage) {
+                    console.error("Erro na Visitor API:", errorCode, errorMessage);
+                    alert("Erro ao obter dados de localização. Por favor, tente novamente.");
                 }
-            } else {
-                throw new Error("Campo 'link' não encontrado na resposta.");
-            }
+            );
         } catch (error) {
             console.error("Erro durante o redirecionamento:", error);
             alert("Ocorreu um problema ao redirecionar. Por favor, tente novamente.");
-        }
-    }
-
-    // Função para carregar o script da Visitor API
-    function loadVisitorAPI() {
-        return new Promise((resolve, reject) => {
-            console.log("Carregando Visitor API...");
-            const script = document.createElement("script");
-            script.src = "https://api.visitorapi.com/script.js";
-            script.async = true;
-            script.onload = () => {
-                console.log("Visitor API carregada com sucesso.");
-                resolve();
-            };
-            script.onerror = () => {
-                console.error("Erro ao carregar Visitor API.");
-                reject(new Error("Falha ao carregar Visitor API."));
-            };
-            document.head.appendChild(script);
-        });
-    }
-
-    // Função para obter dados da Visitor API
-    function getVisitorAPIData() {
-        return new Promise((resolve, reject) => {
-            console.log("Chamando Visitor API...");
-            if (typeof VisitorAPI !== "undefined") {
-                VisitorAPI(
-                    "Ds537kuq7pn7MtMfnfDZ", // Substitua pelo seu Project ID
-                    function(data) {
-                        console.log("Sucesso ao obter dados da Visitor API:", data);
-                        resolve(data);
-                    },
-                    function(errorCode, errorMessage) {
-                        console.error("Erro ao obter dados da Visitor API:", errorCode, errorMessage);
-                        reject({ errorCode, errorMessage });
-                    }
-                );
-            } else {
-                console.error("VisitorAPI não está disponível.");
-                reject(new Error("VisitorAPI não definida após carregar o script."));
-            }
-        });
-    }
-
-    function isValidURL(string) {
-        try {
-            new URL(string);
-            return true;
-        } catch (_) {
-            return false;
         }
     }
 
