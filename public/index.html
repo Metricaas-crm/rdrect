@@ -1,53 +1,65 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QR Code Generator</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
-    }
-    #qrcode {
-      margin-top: 20px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecionando...</title>
+    <script>
+        async function fetchAndRedirect() {
+            try {
+                // Endpoint do Xano
+                const xanoEndpoint = "https://api.metricaas.com.br/api:0BoQA_U6/redirect";
+
+                // Extrai os parâmetros da URL
+                const params = new URLSearchParams(window.location.search);
+                const userid = params.get("userid");
+                const id = params.get("id");
+
+                if (!userid || !id) {
+                    throw new Error("Parâmetros 'userid' ou 'id' não encontrados na URL.");
+                }
+
+                // Monta o payload para enviar ao Xano
+                const payload = { userid, id };
+
+                // Faz a requisição ao Xano
+                const response = await fetch(xanoEndpoint, {
+                    method: "POST", // Método usado no endpoint
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload) // Envia os parâmetros como JSON
+                });
+
+                // Verifica se a requisição foi bem-sucedida
+                if (!response.ok) {
+                    throw new Error(`Erro ao obter o link: ${response.statusText}`);
+                }
+
+                // Converte a resposta para JSON
+                const data = await response.json();
+
+                // Extrai o link do resultado (ajuste conforme a estrutura da resposta)
+                const redirectUrl = data.link; // Exemplo: data.link
+
+                // Redireciona para o link
+                if (redirectUrl) {
+                    window.location.href = redirectUrl;
+                } else {
+                    throw new Error("Link não encontrado na resposta.");
+                }
+            } catch (error) {
+                console.error("Erro durante o redirecionamento:", error);
+                alert("Ocorreu um problema ao redirecionar. Por favor, tente novamente.");
+            }
+        }
+
+        // Inicia o processo quando a página é carregada
+        window.onload = fetchAndRedirect;
+    </script>
 </head>
 <body>
-  <h1>Gerador de QR Code</h1>
-  <p>Digite o endpoint para gerar um QR Code:</p>
-  <input type="text" id="endpoint" placeholder="Digite o endpoint" />
-  <button onclick="fetchQRCode()">Gerar QR Code</button>
-  
-  <div id="qrcode"></div>
-
-  <script>
-    async function fetchQRCode() {
-      const endpoint = document.getElementById('endpoint').value;
-      if (!endpoint) {
-        alert('Por favor, insira um endpoint.');
-        return;
-      }
-
-      try {
-        const response = await fetch(`/fetch-qrcode/${endpoint}`);
-        if (!response.ok) {
-          throw new Error('Falha ao buscar QR Code');
-        }
-
-        const data = await response.json();
-        if (data.base64) {
-          document.getElementById('qrcode').innerHTML = `<img src="${data.base64}" alt="QR Code" />`;
-        } else {
-          document.getElementById('qrcode').innerHTML = 'QR Code não encontrado.';
-        }
-      } catch (error) {
-        console.error('Erro:', error);
-        document.getElementById('qrcode').innerHTML = 'Essa Instância não foi encontrada, por favor entre em contato com nosso suporte';
-      }
-    }
-  </script>
+    <h1>Redirecionando...</h1>
+    <p>Por favor, aguarde enquanto processamos sua solicitação.</p>
 </body>
 </html>
