@@ -24,11 +24,11 @@
 
                 // Faz a requisição ao Xano
                 const response = await fetch(xanoEndpoint, {
-                    method: "POST", // Método usado no endpoint
+                    method: "POST",
                     headers: {
                         "Content-Type": "application/json"
                     },
-                    body: JSON.stringify(payload) // Envia os parâmetros como JSON
+                    body: JSON.stringify(payload)
                 });
 
                 // Verifica se a requisição foi bem-sucedida
@@ -40,7 +40,7 @@
                 const data = await response.json();
 
                 // Extrai o link do resultado (ajuste conforme a estrutura da resposta)
-                const redirectUrl = data.link; // Exemplo: data.link
+                const redirectUrl = data.link; // Exemplo: https://api.whatsapp.com/send?phone=...
 
                 // Redireciona para o link
                 if (redirectUrl) {
