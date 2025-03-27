@@ -1,227 +1,223 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redirecionando...</title>
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirecionando...</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+    }
+
+    .container {
+      text-align: center;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      max-width: 90%;
+      width: 400px;
+    }
+
+    .logo {
+      width: 80px;
+      height: auto;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 22px;
+      color: #25D366;
+      margin: 0;
+    }
+
+    p {
+      font-size: 16px;
+      color: #555;
+      margin: 10px 0 0;
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 20px;
+      }
+
+      p {
+        font-size: 14px;
+      }
+
+      .logo {
+        width: 70px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 18px;
+      }
+
+      p {
+        font-size: 12px;
+      }
+
+      .logo {
+        width: 60px;
+      }
+
+      .container {
+        padding: 15px;
+      }
+    }
+  </style>
+  <script>
+    // Função para obter dados do Visitor API
+    var VisitorAPI = function(projectId, successCallback, errorCallback) {
+      var xhr = new XMLHttpRequest();
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+          var response = JSON.parse(xhr.responseText);
+          if (response.status === 200) {
+            successCallback(response.data);
+          } else {
+            errorCallback(response.status, response.result);
+          }
+        }
+      };
+      xhr.open("GET", "https://api.visitorapi.com/api/?pid=" + projectId);
+      xhr.send(null);
+    };
+
+    // Função principal que coleta dados, chama o webhook do N8N e redireciona
+    async function fetchAndRedirect() {
+      try {
+        const n8nEndpoint = "https://n8nwebhook-track.agenciablackhawk.com.br/webhook/71102832-f62d-4fa8-8311-2f7959a41906";
+
+        // Extrai os parâmetros da URL
+        const params = new URLSearchParams(window.location.search);
+        const userid = params.get("userid");
+        const id = params.get("id");
+        const fbp = params.get("fbp");
+        const fbc = params.get("fbc");
+        const gclid = params.get("gclid");
+
+        if (!userid || !id) {
+          throw new Error("Parâmetros 'userid' ou 'id' não encontrados na URL.");
         }
 
-        .container {
-            text-align: center;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            max-width: 90%;
-            width: 400px;
+        // Coleta os parâmetros UTM
+        const utms = {};
+        for (const [key, value] of params.entries()) {
+          if (key.startsWith("utm_")) {
+            utms[key] = value;
+          }
         }
 
-        .logo {
-            width: 80px;
-            height: auto;
-            margin-bottom: 20px;
-        }
+        console.log("Parâmetros da URL:", { userid, id, fbp, fbc, gclid, ...utms });
 
-        h1 {
-            font-size: 22px;
-            color: #25D366;
-            margin: 0;
-        }
+        // Obter dados de localização via Visitor API
+        const locationData = await getVisitorAPIData();
+        console.log("Dados de localização:", locationData);
 
-        p {
-            font-size: 16px;
-            color: #555;
-            margin: 10px 0 0;
-        }
+        // Informações do navegador
+        const browserData = {
+          userAgent: navigator.userAgent,
+          language: navigator.language,
+          platform: navigator.platform,
+        };
+        console.log("Dados do navegador:", browserData);
 
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 20px;
-            }
-
-            p {
-                font-size: 14px;
-            }
-
-            .logo {
-                width: 70px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            h1 {
-                font-size: 18px;
-            }
-
-            p {
-                font-size: 12px;
-            }
-
-            .logo {
-                width: 60px;
-            }
-
-            .container {
-                padding: 15px;
-            }
-        }
-    </style>
-    <script>
-        var VisitorAPI = function (t, e, a) {
-            var s = new XMLHttpRequest();
-            s.onreadystatechange = function () {
-                var t;
-                s.readyState === XMLHttpRequest.DONE &&
-                    (200 === (t = JSON.parse(s.responseText)).status
-                        ? e(t.data)
-                        : a(t.status, t.result));
-            };
-            s.open("GET", "https://api.visitorapi.com/api/?pid=" + t);
-            s.send(null);
+        // Monta o payload para enviar ao N8N
+        const payload = {
+          userid,
+          id,
+          fbp,
+          fbc,
+          gclid,
+          utms,
+          browser: browserData,
+          location: locationData,
         };
 
-        async function fetchAndRedirect() {
-            try {
-                const xanoEndpoint = "https://api.metricaas.com.br/api:0BoQA_U6/redirect";
+        console.log("Payload enviado ao N8N:", payload);
 
-                // Extrai os parâmetros da URL
-                const params = new URLSearchParams(window.location.search);
-                const userid = params.get("userid");
-                const id = params.get("id");
-                const fbp = params.get("fbp");
-                const fbc = params.get("fbc");
-                const gclid = params.get("gclid");
+        // Envia os dados para o novo webhook do N8N
+        const response = await fetch(n8nEndpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
 
-                if (!userid || !id) {
-                    throw new Error("Parâmetros 'userid' ou 'id' não encontrados na URL.");
-                }
-
-                // Coleta todos os parâmetros UTM
-                const utms = {};
-                for (const [key, value] of params.entries()) {
-                    if (key.startsWith("utm_")) {
-                        utms[key] = value;
-                    }
-                }
-
-                console.log("Parâmetros da URL:", { userid, id, fbp, fbc, gclid, ...utms });
-
-                // Obter localização com Visitor API
-                const locationData = await getVisitorAPIData();
-                console.log("Dados de localização:", locationData);
-
-                // Obter informações do navegador
-                const browserData = {
-                    userAgent: navigator.userAgent,
-                    language: navigator.language,
-                    platform: navigator.platform,
-                };
-                console.log("Dados do navegador:", browserData);
-
-                // Monta o payload para enviar ao Xano
-                const payload = {
-                    userid,
-                    id,
-                    fbp,
-                    fbc,
-                    gclid,
-                    utms,
-                    browser: browserData,
-                    location: locationData,
-                };
-
-                console.log("Payload enviado ao Xano:", payload);
-
-                // Enviar para o Xano
-                const response = await fetch(xanoEndpoint, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(payload),
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Erro ao obter o link: ${response.statusText}`);
-                }
-
-                const responseText = await response.text();
-                console.log("Resposta bruta do Xano:", responseText);
-
-                // Extrai apenas o JSON válido
-                const jsonMatch = responseText.match(/\{.*\}/);
-                if (!jsonMatch) {
-                    throw new Error("JSON válido não encontrado na resposta.");
-                }
-
-                const validJson = jsonMatch[0];
-                console.log("JSON extraído:", validJson);
-
-                // Converte o JSON para objeto
-                const data = JSON.parse(validJson);
-
-                // Verifica se o JSON contém o link
-                if (data["\"link\""]) {
-                    const redirectUrl = data["\"link\""].replace(/\\/g, "");
-                    console.log("URL de redirecionamento:", redirectUrl);
-
-                    if (isValidURL(redirectUrl) && redirectUrl.startsWith("https://api.whatsapp.com")) {
-                        window.location.href = redirectUrl;
-                    } else {
-                        throw new Error("Link inválido ou não permitido.");
-                    }
-                } else {
-                    throw new Error("Campo 'link' não encontrado na resposta.");
-                }
-            } catch (error) {
-                console.error("Erro durante o redirecionamento:", error);
-                alert("Ocorreu um problema ao redirecionar. Por favor, tente novamente.");
-            }
+        if (!response.ok) {
+          throw new Error(`Erro ao obter o link: ${response.statusText}`);
         }
 
-        function getVisitorAPIData() {
-            return new Promise((resolve, reject) => {
-                console.log("Chamando Visitor API...");
-                VisitorAPI(
-                    "Ds537kuq7pn7MtMfnfDZ", // Substitua pelo seu Project ID
-                    function (data) {
-                        console.log("Sucesso ao obter dados da Visitor API:", data);
-                        resolve(data);
-                    },
-                    function (errorCode, errorMessage) {
-                        console.error("Erro na Visitor API:", errorCode, errorMessage);
-                        reject({ errorCode, errorMessage });
-                    }
-                );
-            });
-        }
+        // Processa a resposta como JSON
+        const data = await response.json();
+        console.log("Resposta do N8N:", data);
 
-        function isValidURL(string) {
-            try {
-                new URL(string);
-                return true;
-            } catch (_) {
-                return false;
-            }
-        }
+        // Verifica se a resposta é um array com pelo menos um objeto contendo a chave 'link'
+        if (Array.isArray(data) && data.length > 0 && data[0].link) {
+          const redirectUrl = data[0].link;
+          console.log("URL de redirecionamento:", redirectUrl);
 
-        window.onload = fetchAndRedirect;
-    </script>
+          if (isValidURL(redirectUrl) && redirectUrl.startsWith("https://api.whatsapp.com")) {
+            window.location.href = redirectUrl;
+          } else {
+            throw new Error("Link inválido ou não permitido.");
+          }
+        } else {
+          throw new Error("Campo 'link' não encontrado na resposta.");
+        }
+      } catch (error) {
+        console.error("Erro durante o redirecionamento:", error);
+        alert("Ocorreu um problema ao redirecionar. Por favor, tente novamente.");
+      }
+    }
+
+    // Função que encapsula a chamada à Visitor API em uma Promise
+    function getVisitorAPIData() {
+      return new Promise((resolve, reject) => {
+        console.log("Chamando Visitor API...");
+        VisitorAPI(
+          "Ds537kuq7pn7MtMfnfDZ", // Substitua pelo seu Project ID, se necessário
+          function(data) {
+            console.log("Sucesso ao obter dados da Visitor API:", data);
+            resolve(data);
+          },
+          function(errorCode, errorMessage) {
+            console.error("Erro na Visitor API:", errorCode, errorMessage);
+            reject({ errorCode, errorMessage });
+          }
+        );
+      });
+    }
+
+    // Função para validar se uma string é uma URL válida
+    function isValidURL(string) {
+      try {
+        new URL(string);
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    window.onload = fetchAndRedirect;
+  </script>
 </head>
 <body>
-    <div class="container">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp Logo" class="logo">
-        <h1>Redirecionando...</h1>
-        <p>Por favor, aguarde enquanto processamos sua solicitação.</p>
-    </div>
+  <div class="container">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp Logo" class="logo">
+    <h1>Redirecionando...</h1>
+    <p>Por favor, aguarde enquanto processamos sua solicitação.</p>
+  </div>
 </body>
 </html>
