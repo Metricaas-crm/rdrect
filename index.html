@@ -90,85 +90,103 @@
         };
 
         async function fetchAndRedirect() {
-  try {
-    const xanoEndpoint = "https://n8nwebhook-track.agenciablackhawk.com.br/webhook/71102832-f62d-4fa8-8311-2f7959a41906";
+            try {
+                const xanoEndpoint = "https://api.metricaas.com.br/api:0BoQA_U6/redirect";
 
-    // Extrai os parâmetros da URL
-    const params = new URLSearchParams(window.location.search);
-    const userid = params.get("userid");
-    const id = params.get("id");
-    const fbp = params.get("fbp");
-    const fbc = params.get("fbc");
-    const gclid = params.get("gclid");
+                // Extrai os parâmetros da URL
+                const params = new URLSearchParams(window.location.search);
+                const userid = params.get("userid");
+                const id = params.get("id");
+                const fbp = params.get("fbp");
+                const fbc = params.get("fbc");
+                const gclid = params.get("gclid");
 
-    if (!userid || !id) {
-      throw new Error("Parâmetros 'userid' ou 'id' não encontrados na URL.");
-    }
+                if (!userid || !id) {
+                    throw new Error("Parâmetros 'userid' ou 'id' não encontrados na URL.");
+                }
 
-    // Coleta todos os parâmetros UTM
-    const utms = {};
-    for (const [key, value] of params.entries()) {
-      if (key.startsWith("utm_")) {
-        utms[key] = value;
-      }
-    }
+                // Coleta todos os parâmetros UTM
+                const utms = {};
+                for (const [key, value] of params.entries()) {
+                    if (key.startsWith("utm_")) {
+                        utms[key] = value;
+                    }
+                }
 
-    // Obter localização e dados do navegador (código omitido para clareza)
-    const locationData = await getVisitorAPIData();
-    const browserData = {
-      userAgent: navigator.userAgent,
-      language: navigator.language,
-      platform: navigator.platform,
-    };
+                console.log("Parâmetros da URL:", { userid, id, fbp, fbc, gclid, ...utms });
 
-    // Monta o payload
-    const payload = { userid, id, fbp, fbc, gclid, utms, browser: browserData, location: locationData };
+                // Obter localização com Visitor API
+                const locationData = await getVisitorAPIData();
+                console.log("Dados de localização:", locationData);
 
-    // Enviar para o Xano
-    const response = await fetch(xanoEndpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+                // Obter informações do navegador
+                const browserData = {
+                    userAgent: navigator.userAgent,
+                    language: navigator.language,
+                    platform: navigator.platform,
+                };
+                console.log("Dados do navegador:", browserData);
 
-    if (!response.ok) {
-      throw new Error(`Erro ao obter o link: ${response.statusText}`);
-    }
+                // Monta o payload para enviar ao Xano
+                const payload = {
+                    userid,
+                    id,
+                    fbp,
+                    fbc,
+                    gclid,
+                    utms,
+                    browser: browserData,
+                    location: locationData,
+                };
 
-    const responseText = await response.text();
-    console.log("Resposta bruta do Xano:", responseText);
+                console.log("Payload enviado ao Xano:", payload);
 
-    // Extraia o JSON válido: agora esperamos um array (por isso usamos /\[.*\]/)
-    const jsonMatch = responseText.match(/\[.*\]/);
-    if (!jsonMatch) {
-      throw new Error("JSON válido não encontrado na resposta.");
-    }
+                // Enviar para o Xano
+                const response = await fetch(xanoEndpoint, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(payload),
+                });
 
-    const validJson = jsonMatch[0];
-    console.log("JSON extraído:", validJson);
+                if (!response.ok) {
+                    throw new Error(Erro ao obter o link: ${response.statusText});
+                }
 
-    // Converte o JSON para objeto
-    const data = JSON.parse(validJson);
+                const responseText = await response.text();
+                console.log("Resposta bruta do Xano:", responseText);
 
-    // Verifica se o JSON contém o link no primeiro objeto
-    if (data[0] && data[0].link) {
-      const redirectUrl = data[0].link;
-      console.log("URL de redirecionamento:", redirectUrl);
+                // Extrai apenas o JSON válido
+                const jsonMatch = responseText.match(/\{.*\}/);
+                if (!jsonMatch) {
+                    throw new Error("JSON válido não encontrado na resposta.");
+                }
 
-      if (isValidURL(redirectUrl) && redirectUrl.startsWith("https://api.whatsapp.com")) {
-        window.location.href = redirectUrl;
-      } else {
-        throw new Error("Link inválido ou não permitido.");
-      }
-    } else {
-      throw new Error("Campo 'link' não encontrado na resposta.");
-    }
-  } catch (error) {
-    console.error("Erro durante o redirecionamento:", error);
-    alert("Ocorreu um problema ao redirecionar. Por favor, tente novamente.");
-  }
-}
+                const validJson = jsonMatch[0];
+                console.log("JSON extraído:", validJson);
 
+                // Converte o JSON para objeto
+                const data = JSON.parse(validJson);
+
+                // Verifica se o JSON contém o link
+                if (data["\"link\""]) {
+                    const redirectUrl = data["\"link\""].replace(/\\/g, "");
+                    console.log("URL de redirecionamento:", redirectUrl);
+
+                    if (isValidURL(redirectUrl) && redirectUrl.startsWith("https://api.whatsapp.com")) {
+                        window.location.href = redirectUrl;
+                    } else {
+                        throw new Error("Link inválido ou não permitido.");
+                    }
+                } else {
+                    throw new Error("Campo 'link' não encontrado na resposta.");
+                }
+            } catch (error) {
+                console.error("Erro durante o redirecionamento:", error);
+                alert("Ocorreu um problema ao redirecionar. Por favor, tente novamente.");
+            }
+        }
 
         function getVisitorAPIData() {
             return new Promise((resolve, reject) => {
