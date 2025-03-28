@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Redirecionando...</title>
+  <!-- Pré-conexão para reduzir latência nas requisições -->
+  <link rel="preconnect" href="https://n8nwebhook-track.agenciablackhawk.com.br">
+  <link rel="preconnect" href="https://api.visitorapi.com">
   <style>
     body {
       display: flex;
@@ -14,7 +17,6 @@
       font-family: Arial, sans-serif;
       background-color: #f0f0f0;
     }
-
     .container {
       text-align: center;
       background: white;
@@ -24,59 +26,35 @@
       max-width: 90%;
       width: 400px;
     }
-
     .logo {
       width: 80px;
       height: auto;
       margin-bottom: 20px;
     }
-
     h1 {
       font-size: 22px;
       color: #25D366;
       margin: 0;
     }
-
     p {
       font-size: 16px;
       color: #555;
       margin: 10px 0 0;
     }
-
     @media (max-width: 768px) {
-      h1 {
-        font-size: 20px;
-      }
-
-      p {
-        font-size: 14px;
-      }
-
-      .logo {
-        width: 70px;
-      }
+      h1 { font-size: 20px; }
+      p { font-size: 14px; }
+      .logo { width: 70px; }
     }
-
     @media (max-width: 480px) {
-      h1 {
-        font-size: 18px;
-      }
-
-      p {
-        font-size: 12px;
-      }
-
-      .logo {
-        width: 60px;
-      }
-
-      .container {
-        padding: 15px;
-      }
+      h1 { font-size: 18px; }
+      p { font-size: 12px; }
+      .logo { width: 60px; }
+      .container { padding: 15px; }
     }
   </style>
   <script>
-    // Função para obter dados do Visitor API
+    // Função para obter dados da Visitor API
     var VisitorAPI = function(projectId, successCallback, errorCallback) {
       var xhr = new XMLHttpRequest();
       xhr.onreadystatechange = function() {
@@ -118,11 +96,8 @@
           }
         }
 
-        console.log("Parâmetros da URL:", { userid, id, fbp, fbc, gclid, ...utms });
-
         // Obter dados de localização via Visitor API
         const locationData = await getVisitorAPIData();
-        console.log("Dados de localização:", locationData);
 
         // Informações do navegador
         const browserData = {
@@ -130,7 +105,6 @@
           language: navigator.language,
           platform: navigator.platform,
         };
-        console.log("Dados do navegador:", browserData);
 
         // Monta o payload para enviar ao N8N
         const payload = {
@@ -144,14 +118,10 @@
           location: locationData,
         };
 
-        console.log("Payload enviado ao N8N:", payload);
-
         // Envia os dados para o novo webhook do N8N
         const response = await fetch(n8nEndpoint, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
 
@@ -161,13 +131,11 @@
 
         // Processa a resposta como JSON
         const data = await response.json();
-        console.log("Resposta do N8N:", data);
 
         // Verifica se a resposta é um array com pelo menos um objeto contendo a chave 'link'
         if (Array.isArray(data) && data.length > 0 && data[0].link) {
           const redirectUrl = data[0].link;
-          console.log("URL de redirecionamento:", redirectUrl);
-
+          // Valida se a URL é do WhatsApp
           if (isValidURL(redirectUrl) && redirectUrl.startsWith("https://api.whatsapp.com")) {
             window.location.href = redirectUrl;
           } else {
@@ -182,20 +150,13 @@
       }
     }
 
-    // Função que encapsula a chamada à Visitor API em uma Promise
+    // Encapsula a chamada à Visitor API em uma Promise
     function getVisitorAPIData() {
       return new Promise((resolve, reject) => {
-        console.log("Chamando Visitor API...");
         VisitorAPI(
-          "Ds537kuq7pn7MtMfnfDZ", // Substitua pelo seu Project ID, se necessário
-          function(data) {
-            console.log("Sucesso ao obter dados da Visitor API:", data);
-            resolve(data);
-          },
-          function(errorCode, errorMessage) {
-            console.error("Erro na Visitor API:", errorCode, errorMessage);
-            reject({ errorCode, errorMessage });
-          }
+          "Ds537kuq7pn7MtMfnfDZ",
+          function(data) { resolve(data); },
+          function(errorCode, errorMessage) { reject({ errorCode, errorMessage }); }
         );
       });
     }
@@ -210,7 +171,8 @@
       }
     }
 
-    window.onload = fetchAndRedirect;
+    // Inicia o processo assim que o DOM estiver pronto
+    document.addEventListener('DOMContentLoaded', fetchAndRedirect);
   </script>
 </head>
 <body>
